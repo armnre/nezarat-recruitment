@@ -23,6 +23,7 @@ import { DocumentService } from './modules/documents/service.js';
 import { documentRoutes } from './modules/documents/routes.js';
 import { CommitteeService } from './modules/committee/service.js';
 import { committeeRoutes } from './modules/committee/routes.js';
+import { webhookRoutes } from './modules/webhooks/routes.js';
 
 export async function buildApp(cfg: Config, db: Db, opts: { logger?: boolean } = {}) {
   const app = Fastify({ logger: opts.logger ?? false, trustProxy: cfg.TRUST_PROXY, bodyLimit: 1_048_576 });
@@ -51,7 +52,12 @@ export async function buildApp(cfg: Config, db: Db, opts: { logger?: boolean } =
     return reply.status(500).send({ error: { code: 'INTERNAL', message: 'خطای داخلی سرور؛ لطفاً بعداً تلاش کنید' } });
   });
 
+  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => {
+    done(null, Object.fromEntries(new URLSearchParams(String(body))));
+  });
+
   app.get('/api/health', async () => ({ status: 'ok' }));
+  webhookRoutes(app, { cfg, db });
 
   const auth = new AuthService(db, cfg);
   registerAuth(app, auth, cfg);
