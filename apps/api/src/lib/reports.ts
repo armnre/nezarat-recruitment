@@ -45,6 +45,57 @@ export async function buildXlsx(title: string, head: string[], rows: Cell[][]): 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
+const RTL_LETTER = /[\u0600-\u06EF\u06FA-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const FA_DIGITS_ONLY = /^[\u06F0-\u06F9\u0660-\u0669\/.:,\-]+$/;
+
+/** ترتیب نمایشی یک سطر: pdfkit کلمه‌ها را چپ‌به‌راست می‌چیند، پس ترتیب کلمه‌های فارسی را خودمان برعکس می‌کنیم. */
+function visualSegs(words: string[]): string[] {
+  // fontkit توکن‌های تمام‌رقم فارسی را برعکس می‌کند؛ از پیش جبرانش می‌کنیم
+  const fixed = words.map((w) => (FA_DIGITS_ONLY.test(w) ? [...w].reverse().join('') : w));
+  if (!fixed.some((w) => RTL_LETTER.test(w))) return fixed;
+  const groups: string[][] = [];
+  for (const w of fixed) {
+    const ltr = !RTL_LETTER.test(w) && /[A-Za-z0-9@]/.test(w);
+    const last = groups[groups.length - 1];
+    if (ltr && last && (last as any).ltr) last.push(w);
+    else { const g: any = [w]; g.ltr = ltr; groups.push(g); }
+  }
+  return groups.reverse().flatMap((g) => g);
+}
+
+const gap = (doc: PDFKit.PDFDocument) => doc.widthOfString('a') * 0.6;
+function segsWidth(doc: PDFKit.PDFDocument, segs: string[]) {
+  return segs.reduce((a, w) => a + doc.widthOfString(w), 0) + gap(doc) * Math.max(0, segs.length - 1);
+}
+
+/** شکستن متن به سطرها به ترتیب منطقی، سپس تبدیل هر سطر به ترتیب نمایشی */
+function rtlLines(doc: PDFKit.PDFDocument, text: string, width: number): string[][] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[][] = [];
+  let cur: string[] = [];
+  for (const w of words) {
+    const next = [...cur, w];
+    if (cur.length && segsWidth(doc, visualSegs(next)) > width) { lines.push(cur); cur = [w]; }
+    else cur = next;
+  }
+  if (cur.length || !lines.length) lines.push(cur);
+  return lines.map(visualSegs);
+}
+
+function rtlText(doc: PDFKit.PDFDocument, text: string, x: number, y: number, width: number, align: 'right' | 'center') {
+  const lh = doc.currentLineHeight(true);
+  const lines = rtlLines(doc, text, width);
+  lines.forEach((segs, i) => {
+    const w = segsWidth(doc, segs);
+    let cx = align === 'right' ? x + width - w : x + (width - w) / 2;
+    for (const seg of segs) {
+      doc.text(seg, cx, y + i * lh, { lineBreak: false });
+      cx += doc.widthOfString(seg) + gap(doc);
+    }
+  });
+  return lines.length * lh;
+}
+
 /**
  * PDF افقی A4، راست‌به‌چپ با فونت محلی Vazirmatn (ارقام فارسی).
  * fontkit شکل‌دهی حروف و ترتیب RTL هر سلول را انجام می‌دهد؛ ستون‌ها از راست چیده می‌شوند.
@@ -68,7 +119,7 @@ export function buildPdf(title: string, subtitle: string, head: string[], rows: 
 
     const drawRow = (cells: Cell[], bold: boolean, fill?: string) => {
       doc.font(bold ? 'fa-bold' : 'fa').fontSize(bold ? 9.5 : 9);
-      const heights = cells.map((c, i) => doc.heightOfString(String(c ?? ''), { width: cols[i] - pad * 2 }));
+      const heights = cells.map((c, i) => rtlLines(doc, String(c ?? ''), cols[i] - pad * 2).length * doc.currentLineHeight(true));
       const h = Math.max(...heights) + pad * 2;
       if (doc.y + h > doc.page.height - doc.page.margins.bottom) {
         doc.addPage();
@@ -81,14 +132,19 @@ export function buildPdf(title: string, subtitle: string, head: string[], rows: 
         if (fill) doc.rect(x, y, cols[i], h).fill(fill);
         doc.rect(x, y, cols[i], h).lineWidth(0.5).stroke('#9aa5ab');
         doc.fillColor(fill ? '#ffffff' : '#111111').font(bold ? 'fa-bold' : 'fa')
-          .text(String(c ?? ''), x + pad, y + pad, { width: cols[i] - pad * 2, align: 'right' });
+          ;
+        rtlText(doc, String(c ?? ''), x + pad, y + pad, cols[i] - pad * 2, 'right');
       });
       doc.x = left;
       doc.y = y + h;
     };
 
-    doc.font('fa-bold').fontSize(15).fillColor('#111111').text(title, left, doc.y, { width: usable, align: 'center' });
-    doc.font('fa').fontSize(10).fillColor('#555555').text(subtitle, { width: usable, align: 'center' });
+    let ty = doc.y;
+    doc.font('fa-bold').fontSize(15).fillColor('#111111');
+    ty += rtlText(doc, title, left, ty, usable, 'center');
+    doc.font('fa').fontSize(10).fillColor('#555555');
+    ty += rtlText(doc, subtitle, left, ty, usable, 'center');
+    doc.x = left; doc.y = ty;
     doc.moveDown(0.8);
     drawRow(head, true, '#1f4e5f');
     rows.forEach((r) => drawRow(r, false));
