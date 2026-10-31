@@ -1,0 +1,23 @@
+[Unit]
+Description=Nezarat recruitment worker (SMS / email / reminders queue)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nezarat
+Group=nezarat
+WorkingDirectory=/opt/nezarat/apps/api
+EnvironmentFile=/etc/nezarat/nezarat.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/env node dist/worker.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

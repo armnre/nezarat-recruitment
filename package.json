@@ -1,11 +1,16 @@
 {
   "name": "nezarat",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
-  "engines": { "node": ">=22" },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "yarn workspace @nezarat/shared build && yarn workspace @nezarat/api build && yarn workspace @nezarat/web build",
-    "typecheck": "yarn workspaces run typecheck",
+    "typecheck": "yarn workspace @nezarat/shared build && yarn workspaces run typecheck",
     "test": "yarn workspace @nezarat/api test"
   }
 }
