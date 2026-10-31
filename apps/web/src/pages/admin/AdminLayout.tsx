@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { BarChart3, Building2, FileStack, GraduationCap, LayoutDashboard, LogOut, Megaphone, Users } from 'lucide-react';
+import { BarChart3, Building2, FileStack, GraduationCap, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Users } from 'lucide-react';
 import { useLogout, useMe } from '../../lib/auth';
 import { cn, fa } from '../../lib/format';
 
@@ -9,6 +9,7 @@ const nav = [
   { to: '/admin/applications', label: 'پرونده‌ها', icon: FileStack },
   { to: '/admin/members', label: 'اعضای کمیته', icon: Users },
   { to: '/admin/org', label: 'ساختار سازمانی', icon: Building2 },
+  { to: '/admin/templates', label: 'قالب پیام‌ها', icon: MessageSquareText },
   { to: '/admin/reports', label: 'گزارش و رویدادها', icon: BarChart3 },
 ];
 

@@ -5,17 +5,22 @@ import { STATUS_LABELS_FA, type ApplicationStatus } from '@nezarat/shared';
 import type { Db } from '../../db/client.js';
 import {
   applications, auditLogs, callRequiredDocuments, calls, committeeMembers, departments, documents, faculties,
-  roles, scoringCriteria, userRoles, users,
+  roles, scoringCriteria, tenants, userRoles, users,
 } from '../../db/schema.js';
+import { buildCsv, buildPdf, buildXlsx } from '../../lib/reports.js';
+import { assertCallCapacity } from '../../lib/subscription.js';
+import { JALALI_MONTHS, isoToJalali } from '@nezarat/shared';
+
+const tehranIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' });
+const jalaliDate = (d: Date | null) => {
+  if (!d) return '';
+  const j = isoToJalali(tehranIso.format(d));
+  return `${j.jd} ${JALALI_MONTHS[j.jm - 1]} ${j.jy}`;
+};
 import { requirePermission, scoped, type TenantContext } from '../../lib/tenant.js';
 import { Errors } from '../../lib/errors.js';
 import { audit } from '../../lib/audit.js';
 
-const csvCell = (v: unknown) => {
-  let s = v == null ? '' : String(v);
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`; // CSV/formula injection guard
-  return `"${s.replace(/"/g, '""')}"`;
-};
 
 export class AdminService {
   constructor(private db: Db) {}
@@ -72,6 +77,7 @@ export class AdminService {
 
   async saveCall(ctx: TenantContext, id: string | null, input: CallInput) {
     requirePermission(ctx, 'calls.manage');
+    if (!id) await assertCallCapacity(this.db, ctx.tenantId);
     await this.assertDepartment(ctx, input.departmentId);
     const locked = id ? await this.structureLocked(id) : false;
     const before = id ? await this.getCall(ctx, id) : null;
@@ -219,7 +225,7 @@ export class AdminService {
   }
 
   // ---------- Reports & audit ----------
-  async exportCsv(ctx: TenantContext, callId?: string) {
+  async exportReport(ctx: TenantContext, format: 'csv' | 'xlsx' | 'pdf', callId?: string): Promise<string | Buffer> {
     requirePermission(ctx, 'reports.export');
     const rows = await this.db.select({
       name: users.fullName, mobile: users.mobile, call: calls.title, status: applications.status, submittedAt: applications.submittedAt, finalScore: applications.finalScore,
@@ -228,10 +234,14 @@ export class AdminService {
     }).from(applications).innerJoin(users, eq(users.id, applications.applicantId)).innerJoin(calls, eq(calls.id, applications.callId))
       .where(scoped(ctx, applications, ne(applications.status, 'draft'), callId ? eq(applications.callId, callId) : undefined))
       .orderBy(asc(calls.title), sql`${applications.finalScore} desc nulls last`);
-    const head = ['نام متقاضی', 'موبایل', 'فراخوان', 'وضعیت', 'تاریخ ارسال', 'امتیاز نهایی', 'تعداد ارزیابی', 'توضیح'];
-    const lines = rows.map((r) => [r.name, r.mobile, r.call, STATUS_LABELS_FA[r.status as ApplicationStatus], r.submittedAt?.toISOString().slice(0, 10), r.finalScore, r.reviewers, r.decisionNote].map(csvCell).join(','));
-    await audit(this.db, { tenantId: ctx.tenantId, actorId: ctx.userId, action: 'report.export', entity: 'applications', after: { callId: callId ?? null, rows: rows.length }, ip: ctx.ip });
-    return '\uFEFF' + [head.map(csvCell).join(','), ...lines].join('\r\n');
+    const head = ['ردیف', 'نام متقاضی', 'موبایل', 'فراخوان', 'وضعیت', 'تاریخ ارسال', 'امتیاز نهایی', 'تعداد ارزیابی', 'توضیح'];
+    const data = rows.map((r, i) => [i + 1, r.name, r.mobile, r.call, STATUS_LABELS_FA[r.status as ApplicationStatus], jalaliDate(r.submittedAt), r.finalScore == null ? '' : Number(r.finalScore), r.reviewers, r.decisionNote]);
+    await audit(this.db, { tenantId: ctx.tenantId, actorId: ctx.userId, action: 'report.export', entity: 'applications', after: { callId: callId ?? null, rows: rows.length, format }, ip: ctx.ip });
+    const [t] = await this.db.select({ name: tenants.name }).from(tenants).where(eq(tenants.id, ctx.tenantId));
+    const title = `فهرست متقاضیان — ${t?.name ?? ''}`;
+    if (format === 'csv') return buildCsv(head, data);
+    if (format === 'xlsx') return buildXlsx(title, head, data);
+    return buildPdf(title, `تاریخ گزارش: ${jalaliDate(new Date())} — تعداد: ${rows.length}`, head, data, [4, 14, 10, 16, 10, 9, 7, 7, 23]);
   }
 
   auditLog(ctx: TenantContext, opts: { entity?: string; limit: number; offset: number }) {

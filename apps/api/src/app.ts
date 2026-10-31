@@ -24,6 +24,9 @@ import { documentRoutes } from './modules/documents/routes.js';
 import { CommitteeService } from './modules/committee/service.js';
 import { committeeRoutes } from './modules/committee/routes.js';
 import { webhookRoutes } from './modules/webhooks/routes.js';
+import { PlatformService } from './modules/platform/service.js';
+import { platformRoutes } from './modules/platform/routes.js';
+import { templateRoutes } from './modules/templates/routes.js';
 
 export async function buildApp(cfg: Config, db: Db, opts: { logger?: boolean } = {}) {
   const app = Fastify({ logger: opts.logger ?? false, trustProxy: cfg.TRUST_PROXY, bodyLimit: 1_048_576 });
@@ -69,6 +72,8 @@ export async function buildApp(cfg: Config, db: Db, opts: { logger?: boolean } =
   committeeRoutes(app, { service: new CommitteeService(db, applications, profiles) });
   adminRoutes(app, { service: new AdminService(db) });
   callRoutes(app, { service: new CallsService(db) });
+  platformRoutes(app, { service: new PlatformService(db) });
+  templateRoutes(app, { db });
   documentRoutes(app, { service: new DocumentService(db, cfg.UPLOAD_DIR, cfg.MAX_UPLOAD_MB) });
 
   return app;

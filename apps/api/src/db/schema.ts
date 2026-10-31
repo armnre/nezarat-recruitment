@@ -17,7 +17,7 @@ export const callStatus = pgEnum('call_status', ['draft', 'published', 'closed']
 export const jobStatus = pgEnum('job_status', ['pending', 'running', 'done', 'failed']);
 
 export const tenants = pgTable('tenants', {
-  id: id(), slug: text('slug').notNull().unique(), name: text('name').notNull(),
+  id: id(), slug: text('slug').notNull().unique(), name: text('name').notNull(), hostname: text('hostname').unique(),
   status: text('status').notNull().default('active'), plan: text('plan').notNull().default('basic'),
   maxApplicants: integer('max_applicants').notNull().default(1000), maxCalls: integer('max_calls').notNull().default(20),
   subscriptionEndsAt: timestamp('subscription_ends_at', { withTimezone: true }), ...ts(),

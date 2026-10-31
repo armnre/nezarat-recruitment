@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, Building2, Search } from 'lucide-react';
-import { api, TENANT_SLUG } from '../../lib/api';
+import { api } from '../../lib/api';
+import { useMe } from '../../lib/auth';
 import { daysLeft, fa, jDate } from '../../lib/format';
 import type { ApplicationRow, PublicCall } from '../../lib/types';
 import { Card, Input, Skeleton } from '../../components/ui';
@@ -11,7 +12,9 @@ import { PageTitle } from './ApplicantLayout';
 
 export default function CallsPage() {
   const [q, setQ] = useState('');
-  const calls = useQuery({ queryKey: ['public-calls'], queryFn: () => api<PublicCall[]>(`/public/${TENANT_SLUG}/calls`) });
+  const { data: me } = useMe();
+  const slug = me?.tenant?.slug;
+  const calls = useQuery({ queryKey: ['public-calls', slug], enabled: !!slug, queryFn: () => api<PublicCall[]>(`/public/${slug}/calls`) });
   const apps = useQuery({ queryKey: ['applications'], queryFn: () => api<ApplicationRow[]>('/applications') });
   const list = (calls.data ?? []).filter((c) => !q || `${c.title} ${c.facultyName ?? ''} ${c.departmentName ?? ''}`.includes(q));
 

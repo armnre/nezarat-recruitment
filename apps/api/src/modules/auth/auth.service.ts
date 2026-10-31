@@ -11,6 +11,12 @@ import { audit } from '../../lib/audit.js';
 export class AuthService {
   constructor(private db: Db, private cfg: Config) {}
 
+  async tenantByHost(host: string) {
+    const [t] = await this.db.select().from(tenants).where(eq(tenants.hostname, host)).limit(1);
+    if (!t || t.status !== 'active') throw Errors.notFound('دانشگاه');
+    return t;
+  }
+
   async tenantBySlug(slug: string) {
     const [t] = await this.db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
     if (!t || t.status !== 'active') throw Errors.notFound('دانشگاه');

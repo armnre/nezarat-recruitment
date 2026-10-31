@@ -7,6 +7,7 @@ import { requirePermission, scoped, type TenantContext } from '../../lib/tenant.
 import { AppError, Errors } from '../../lib/errors.js';
 import { audit } from '../../lib/audit.js';
 import { enqueue } from '../../lib/queue.js';
+import { assertApplicantCapacity } from '../../lib/subscription.js';
 import { canViewApplication } from '../../lib/access.js';
 
 const invalidTransition = () => new AppError(409, 'INVALID_TRANSITION', 'تغییر وضعیت درخواست‌شده مجاز نیست');
@@ -41,6 +42,7 @@ export class ApplicationService {
     const [call] = await this.db.select().from(calls)
       .where(scoped(ctx, calls, eq(calls.id, callId), eq(calls.status, 'published'), lte(calls.opensAt, now), gte(calls.closesAt, now))).limit(1);
     if (!call) throw Errors.validation('این فراخوان فعال نیست');
+    await assertApplicantCapacity(this.db, ctx.tenantId, ctx.userId);
     const [a] = await this.db.insert(applications).values({ tenantId: ctx.tenantId, callId, applicantId: ctx.userId }).onConflictDoNothing().returning();
     if (!a) throw Errors.conflict('قبلاً برای این فراخوان درخواست ثبت کرده‌اید');
     await this.db.insert(applicationStatusHistory).values({ tenantId: ctx.tenantId, applicationId: a.id, toStatus: 'draft', changedBy: ctx.userId });

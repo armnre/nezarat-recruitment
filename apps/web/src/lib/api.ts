@@ -46,4 +46,3 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return (ct.includes('application/json') ? res.json() : (res.blob() as unknown)) as Promise<T>;
 }
 
-export const TENANT_SLUG = (import.meta.env.VITE_TENANT_SLUG as string | undefined) ?? 'shomal';

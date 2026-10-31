@@ -36,10 +36,12 @@ export function adminRoutes(app: FastifyInstance, { service }: { service: AdminS
     return service.updateMember(tenantCtx(req, A), idParam.parse(req.params).id, b);
   });
 
-  app.get('/api/v1/admin/reports/applications.csv', async (req, reply) => {
+  const MIME = { csv: 'text/csv; charset=utf-8', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pdf: 'application/pdf' } as const;
+  app.get('/api/v1/admin/reports/applications.:format', async (req, reply) => {
+    const { format } = z.object({ format: z.enum(['csv', 'xlsx', 'pdf'], { message: 'قالب خروجی نامعتبر است' }) }).parse(req.params);
     const { callId } = z.object({ callId: z.string().uuid().optional() }).parse(req.query);
-    const csv = await service.exportCsv(tenantCtx(req, A), callId);
-    return reply.header('Content-Type', 'text/csv; charset=utf-8').header('Content-Disposition', 'attachment; filename="applications.csv"').header('Cache-Control', 'no-store').send(csv);
+    const body = await service.exportReport(tenantCtx(req, A), format, callId);
+    return reply.header('Content-Type', MIME[format]).header('Content-Disposition', `attachment; filename="applications.${format}"`).header('Cache-Control', 'no-store').send(body);
   });
   app.get('/api/v1/admin/audit', async (req) => {
     const q = z.object({ entity: z.string().max(60).optional(), limit: z.coerce.number().int().min(1).max(200).default(50), offset: z.coerce.number().int().min(0).default(0) }).parse(req.query);

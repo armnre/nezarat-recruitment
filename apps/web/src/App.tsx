@@ -20,6 +20,11 @@ import ApplicationsAdminPage from './pages/admin/ApplicationsAdminPage';
 import MembersPage from './pages/admin/MembersPage';
 import OrgPage from './pages/admin/OrgPage';
 import ReportsPage from './pages/admin/ReportsPage';
+import TemplatesPage from './pages/admin/TemplatesPage';
+import PlatformLayout from './pages/platform/PlatformLayout';
+import TenantsPage from './pages/platform/TenantsPage';
+import PlatformUsersPage from './pages/platform/PlatformUsersPage';
+import PerformancePage from './pages/platform/PerformancePage';
 import { Skeleton } from './components/ui';
 
 function FullPageLoader() {
@@ -30,6 +35,7 @@ function FullPageLoader() {
 function Home() {
   const { data: me } = useMe();
   if (!me) return <Navigate to="/login" replace />;
+  if (me.roles.includes('super_admin')) return <Navigate to="/platform" replace />;
   if (me.roles.includes('university_admin')) return <Navigate to="/admin" replace />;
   if (me.roles.includes('committee_member') || me.roles.includes('committee_chair')) return <Navigate to="/committee" replace />;
   if (canManage(me.permissions)) return <Navigate to="/committee/queue" replace />;
@@ -72,7 +78,13 @@ export default function App() {
         <Route path="applications/:id" element={<DossierPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="org" element={<OrgPage />} />
+        <Route path="templates" element={<TemplatesPage />} />
         <Route path="reports" element={<ReportsPage />} />
+      </Route>
+      <Route path="/platform" element={<RequireRole role="super_admin"><PlatformLayout /></RequireRole>}>
+        <Route index element={<TenantsPage />} />
+        <Route path="users" element={<PlatformUsersPage />} />
+        <Route path="performance" element={<PerformancePage />} />
       </Route>
       <Route path="*" element={<Home />} />
     </Routes>
