@@ -9,7 +9,9 @@ import { deliveryParsers } from '../../providers/sms/index.js';
 export function webhookRoutes(app: FastifyInstance, deps: { cfg: Config; db: Db }) {
   app.post<{ Params: { provider: string }; Querystring: { token?: string } }>('/api/v1/webhooks/sms/:provider', async (req, reply) => {
     const expected = deps.cfg.SMS_WEBHOOK_TOKEN;
-    const given = req.query.token ?? String(req.headers['x-webhook-token'] ?? '');
+    // هدر ترجیح دارد (در لاگ دسترسی nginx ثبت نمی‌شود)؛ query token برای ارائه‌دهندگانی که هدر نمی‌فرستند
+    const header = req.headers['x-webhook-token'];
+    const given = (Array.isArray(header) ? header[0] : header) || req.query.token || '';
     if (!expected || !given || !safeEqual(given, expected)) {
       return reply.status(401).send({ error: { code: 'UNAUTHORIZED', message: 'توکن webhook نامعتبر است' } });
     }

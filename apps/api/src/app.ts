@@ -29,7 +29,7 @@ import { platformRoutes } from './modules/platform/routes.js';
 import { templateRoutes } from './modules/templates/routes.js';
 
 export async function buildApp(cfg: Config, db: Db, opts: { logger?: boolean } = {}) {
-  const app = Fastify({ logger: opts.logger ?? false, trustProxy: cfg.TRUST_PROXY, bodyLimit: 1_048_576 });
+  const app = Fastify({ logger: opts.logger ?? false, trustProxy: cfg.TRUST_PROXY ? cfg.TRUSTED_PROXY_IPS : false, bodyLimit: 1_048_576 });
 
   await app.register(helmet, {
     contentSecurityPolicy: {

@@ -27,7 +27,7 @@ sudo install -d -m 750 /etc/nezarat
 sudo cp /opt/nezarat/.env.example /etc/nezarat/nezarat.env
 sudo chown root:nezarat /etc/nezarat/nezarat.env && sudo chmod 640 /etc/nezarat/nezarat.env
 ```
-مقادیر `/etc/nezarat/nezarat.env` را پر کنید: `DATABASE_URL`، `SESSION_SECRET` (`openssl rand -base64 48`)، کلیدهای provider پیامک، `SMS_WEBHOOK_TOKEN`، `SMTP_*`.
+مقادیر `/etc/nezarat/nezarat.env` را پر کنید: `DATABASE_URL`، `SESSION_SECRET` (`openssl rand -base64 48`)، کلیدهای provider پیامک، `SMS_WEBHOOK_TOKEN`، `SMTP_*`، و `TENANT_HOSTNAME=nezarat.shomal.ac.ir` (برای تشخیص دانشگاه از روی دامنه).
 
 ## ۴. سرویس‌های systemd
 ```bash
@@ -38,18 +38,41 @@ sudo systemctl enable shomal-nezarat shomal-nezarat-worker
 
 ## ۵. directiveهای nginx
 Plesk → دامنه → **Apache & nginx Settings → Additional nginx directives**: محتوای `deploy/nginx-additional-directives.conf` را بچسبانید. `client_max_body_size` را با `MAX_UPLOAD_MB` هماهنگ کنید (۲ مگ بیشتر). اگر «Proxy mode» فعال است و Apache لازم نیست، آن را خاموش کنید تا SPA fallback از nginx اعمال شود.
+اگر `nginx -t` (یا ذخیرهٔ تنظیمات در Plesk) خطای `duplicate location "/"` داد، یعنی Plesk خودش `location /` دارد. در این صورت بلوک `location / { try_files ... }` را حذف کنید و به جای آن این خط را (در سطح server، همان بخش Additional directives) بگذارید:
+```nginx
+error_page 404 =200 /index.html;
+```
+بلوک `/api/` هدر `X-Forwarded-Host $host` را می‌فرستد؛ API فقط وقتی آن را می‌پذیرد که درخواست از `TRUSTED_PROXY_IPS` (پیش‌فرض `127.0.0.1,::1`) آمده باشد، و در غیر این صورت از هدر `Host` معتبر استفاده می‌کند. `TRUST_PROXY=false` یعنی هیچ هدر X-Forwarded-* پذیرفته نمی‌شود.
 هدرهای CSP را (در صورت نیاز) در همان بخش یا «Additional headers» تنظیم کنید؛ API خودش با helmet همان CSP را می‌فرستد.
 
 ## ۶. اولین دپلوی
 ```bash
 cd /opt/nezarat && sudo deploy/deploy.sh
-( set -a; . /etc/nezarat/nezarat.env; set +a; cd apps/api && sudo -E -u nezarat node dist/cli/seed-base.js )   # tenant دانشگاه شمال و RBAC
+( set -a; . /etc/nezarat/nezarat.env; set +a; cd apps/api && sudo -E -u nezarat node dist/cli/seed-base.js )   # tenant دانشگاه شمال و RBAC؛ اگر TENANT_HOSTNAME تنظیم باشد hostname را هم ست می‌کند
 ( set -a; . /etc/nezarat/nezarat.env; set +a; cd apps/api && sudo -E -u nezarat node dist/cli/seed-admin.js ) # رمز از ADMIN_PASSWORD یا prompt
 ```
 `deploy.sh`: بکاپ httpdocs در `/var/backups/nezarat` → `yarn install --frozen-lockfile` → build → migrate → کپی `apps/web/dist-web` به httpdocs → restart سرویس‌ها → تست `GET /api/health`.
 
 ## ۷. webhook پیامک
-در پنل ارائه‌دهنده، آدرس گزارش تحویل را `https://nezarat.shomal.ac.ir/api/v1/webhooks/sms/<kavenegar|melipayamak|ippanel>?token=<SMS_WEBHOOK_TOKEN>` بگذارید.
+آدرس گزارش تحویل: `https://nezarat.shomal.ac.ir/api/v1/webhooks/sms/<kavenegar|melipayamak|ippanel>`.
+- اگر پنل ارائه‌دهنده امکان هدر سفارشی دارد، توکن را در هدر `X-Webhook-Token: <SMS_WEBHOOK_TOKEN>` بفرستید (اولویت با هدر است و توکن در لاگ دسترسی nginx ثبت نمی‌شود).
+- در غیر این صورت `?token=<SMS_WEBHOOK_TOKEN>` را به انتهای آدرس اضافه کنید.
+
+توصیه: دسترسی به webhook را به IPهای اعلام‌شدهٔ ارائه‌دهنده محدود کنید (IPها را از پشتیبانی ارائه‌دهنده بگیرید). این بلوک را **قبل از** `location ^~ /api/` در Additional nginx directives بگذارید:
+```nginx
+location ^~ /api/v1/webhooks/sms/ {
+    allow 203.0.113.10;   # IP ارائه‌دهنده — جایگزین کنید
+    deny all;
+    proxy_pass http://127.0.0.1:3102;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    access_log off;
+}
+```
 
 ## ۸. بررسی
 ```bash
