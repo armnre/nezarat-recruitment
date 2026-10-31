@@ -9,6 +9,9 @@ const envSchema = z.object({
   SESSION_TTL_HOURS: z.coerce.number().default(12),
   COOKIE_SECURE: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
   TRUST_PROXY: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  /** فقط درخواست‌هایی که از این IPها (nginx محلی) برسند می‌توانند X-Forwarded-* را تعیین کنند */
+  TRUSTED_PROXY_IPS: z.string().default('127.0.0.1,::1')
+    .transform((v) => v.split(',').map((s) => s.trim()).filter(Boolean)),
   UPLOAD_DIR: z.string().default('/var/lib/nezarat/uploads'),
   MAX_UPLOAD_MB: z.coerce.number().default(10),
   SMS_PROVIDER: z.enum(['kavenegar', 'melipayamak', 'ippanel', 'mock']).default('mock'),

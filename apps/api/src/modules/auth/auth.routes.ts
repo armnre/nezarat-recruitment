@@ -4,6 +4,7 @@ import type { Config } from '../../config.js';
 import type { AuthService } from './auth.service.js';
 import type { OtpService } from './otp.service.js';
 import { csrfTokenFor, requireUser, SESSION_COOKIE, setSessionCookie } from '../../plugins/auth.js';
+import { requestHostname } from '../../lib/host.js';
 
 export function authRoutes(app: FastifyInstance, deps: { cfg: Config; auth: AuthService; otp: OtpService }) {
   const { cfg, auth, otp } = deps;
@@ -51,7 +52,7 @@ export function authRoutes(app: FastifyInstance, deps: { cfg: Config; auth: Auth
 
   /** تعیین دانشگاه از hostname درخواست (Host / X-Forwarded-Host پشت nginx). */
   app.get('/api/v1/public/tenant', async (req) => {
-    const t = await auth.tenantByHost(req.hostname.split(':')[0].toLowerCase());
+    const t = await auth.tenantByHost(requestHostname(req));
     return { id: t.id, slug: t.slug, name: t.name };
   });
 
