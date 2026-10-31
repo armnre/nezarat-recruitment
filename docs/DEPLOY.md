@@ -57,3 +57,13 @@ curl -s https://nezarat.shomal.ac.ir/api/health      # {"status":"ok"}
 journalctl -u shomal-nezarat -f
 journalctl -u shomal-nezarat-worker -f
 ```
+
+## ۹. چنددانشگاهی (سوپرادمین)
+1. ساخت مدیر پلتفرم (بدون `--tenant`):
+   `( set -a; . /etc/nezarat/nezarat.env; set +a; cd apps/api && sudo -E -u nezarat node dist/cli/seed-admin.js --email root@example.ir )`
+2. ورود در صفحهٔ «کمیته و مدیران» با تیک «ورود مدیر پلتفرم» ← پنل `/platform`.
+3. «دانشگاه جدید»: نام، شناسه، **دامنه** (مثلاً `nezarat.shomal.ac.ir`)، پلن، سقف متقاضی/فراخوان و تاریخ پایان اشتراک. سپس «افزودن مدیر» برای آن دانشگاه.
+4. هر دامنهٔ دانشگاه را در Plesk به همین سرور/سرویس اشاره دهید (alias یا subscription جدا با همان nginx directives). nginx هدر `Host` را عبور می‌دهد و سامانه دانشگاه را از روی hostname تشخیص می‌دهد؛ برای tenant اول، فیلد دامنه را `nezarat.shomal.ac.ir` بگذارید.
+5. سقف‌ها در API اعمال می‌شوند: با پر شدن سقف یا پایان اشتراک، ساخت فراخوان و ثبت درخواست جدید با خطای `SUBSCRIPTION_LIMIT` رد می‌شود.
+
+خروجی‌های Excel و PDF از فونت محلی `apps/api/assets/fonts/Vazirmatn-FD` (مجوز OFL) استفاده می‌کنند؛ پوشهٔ `assets` باید کنار `dist` باقی بماند.

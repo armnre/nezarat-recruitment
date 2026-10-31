@@ -3,17 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { GraduationCap, ShieldCheck, Smartphone } from 'lucide-react';
 import { mobileSchema } from '@nezarat/shared';
-import { api, ApiError, setCsrf, TENANT_SLUG } from '../lib/api';
+import { api, ApiError, setCsrf } from '../lib/api';
+import { useTenant } from '../lib/tenant';
 import { fa } from '../lib/format';
 import { Alert, Button, Card, Field, Input } from '../components/ui';
 import type { Me } from '../lib/types';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'otp' | 'staff'>('otp');
-  const [tenantName, setTenantName] = useState('');
-  useEffect(() => {
-    api<{ name: string }>(`/public/tenants/${TENANT_SLUG}`).then((t) => setTenantName(t.name)).catch(() => undefined);
-  }, []);
+  const tenant = useTenant();
+  const tenantName = tenant.data?.name ?? '';
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -37,6 +36,7 @@ export default function LoginPage() {
             <button className={`rounded py-2 ${mode === 'otp' ? 'bg-card font-medium shadow-sm' : ''}`} onClick={() => setMode('otp')}>متقاضی</button>
             <button className={`rounded py-2 ${mode === 'staff' ? 'bg-card font-medium shadow-sm' : ''}`} onClick={() => setMode('staff')}>کمیته و مدیران</button>
           </div>
+          {tenant.isFetched && !tenant.data && mode === 'otp' && <div className="mb-4"><Alert tone="error">دانشگاهی برای این نشانی ثبت نشده است.</Alert></div>}
           {mode === 'otp' ? <OtpForm /> : <StaffForm />}
         </Card>
       </main>
@@ -55,6 +55,8 @@ function useFinish() {
 }
 
 function OtpForm() {
+  const { data: tenantInfo } = useTenant();
+  const tenantSlug = () => tenantInfo?.slug ?? '';
   const finish = useFinish();
   const [mobile, setMobile] = useState('');
   const [code, setCode] = useState('');
@@ -75,7 +77,7 @@ function OtpForm() {
     if (!m.success) return setError(m.error.issues[0].message);
     setBusy(true);
     try {
-      const r = await api<{ expiresIn: number }>('/auth/otp/request', { method: 'POST', body: { tenantSlug: TENANT_SLUG, mobile } });
+      const r = await api<{ expiresIn: number }>('/auth/otp/request', { method: 'POST', body: { tenantSlug: tenantSlug(), mobile } });
       setStep('code');
       setLeft(r.expiresIn);
     } catch (e) {
@@ -86,7 +88,7 @@ function OtpForm() {
     setError('');
     setBusy(true);
     try {
-      finish(await api('/auth/otp/verify', { method: 'POST', body: { tenantSlug: TENANT_SLUG, mobile, code } }));
+      finish(await api('/auth/otp/verify', { method: 'POST', body: { tenantSlug: tenantSlug(), mobile, code } }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'خطا');
     } finally { setBusy(false); }
@@ -124,6 +126,8 @@ function OtpForm() {
 }
 
 function StaffForm() {
+  const { data: tenantInfo } = useTenant();
+  const tenantSlug = () => tenantInfo?.slug ?? '';
   const finish = useFinish();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -134,7 +138,7 @@ function StaffForm() {
     setError('');
     setBusy(true);
     try {
-      finish(await api('/auth/login', { method: 'POST', body: { email, password, tenantSlug: platform ? undefined : TENANT_SLUG } }));
+      finish(await api('/auth/login', { method: 'POST', body: { email, password, tenantSlug: platform ? undefined : tenantSlug() } }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'خطا');
     } finally { setBusy(false); }

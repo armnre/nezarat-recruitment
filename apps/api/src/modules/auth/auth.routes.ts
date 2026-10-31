@@ -49,6 +49,12 @@ export function authRoutes(app: FastifyInstance, deps: { cfg: Config; auth: Auth
 
   app.get('/api/v1/auth/me', async (req) => auth.me(requireUser(req).id));
 
+  /** تعیین دانشگاه از hostname درخواست (Host / X-Forwarded-Host پشت nginx). */
+  app.get('/api/v1/public/tenant', async (req) => {
+    const t = await auth.tenantByHost(req.hostname.split(':')[0].toLowerCase());
+    return { id: t.id, slug: t.slug, name: t.name };
+  });
+
   app.get('/api/v1/public/tenants/:slug', async (req) => {
     const t = await auth.tenantBySlug((req.params as { slug: string }).slug);
     return { id: t.id, slug: t.slug, name: t.name };
