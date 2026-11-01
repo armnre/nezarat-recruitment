@@ -5,8 +5,7 @@ import { FileCheck2, ListChecks } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
 import type { ApplicationRow, CallDetail } from '../../lib/types';
-import { Alert, Button, Card, CardContent, CardHeader, CardTitle, LinkButton, Skeleton } from '../../components/ui';
-import { PageTitle } from './ApplicantLayout';
+import { Alert, Button, Card, CardContent, CardHeader, CardTitle, LinkButton, Skeleton, PageTitle } from '../../components/ui';
 
 export default function CallDetailPage() {
   const { id } = useParams<{ id: string }>();

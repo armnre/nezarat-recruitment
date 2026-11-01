@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, Building2, Search } from 'lucide-react';
+import { CalendarClock, Building2, Megaphone } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useMe } from '../../lib/auth';
 import { daysLeft, fa, jDate } from '../../lib/format';
 import type { ApplicationRow, PublicCall } from '../../lib/types';
-import { Card, Input, Skeleton } from '../../components/ui';
+import { Card, EmptyState, PageTitle, SearchInput, Skeleton } from '../../components/ui';
 import { StatusBadge } from '../../components/StatusBadge';
-import { PageTitle } from './ApplicantLayout';
 
 export default function CallsPage() {
   const [q, setQ] = useState('');
@@ -21,9 +20,9 @@ export default function CallsPage() {
   return (
     <>
       <PageTitle title="فراخوان‌های فعال" sub="فراخوان مناسب را انتخاب و درخواست خود را ثبت کنید."
-        action={<div className="relative w-full sm:w-64"><Search className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /><Input className="pr-10" placeholder="جستجو در فراخوان‌ها" value={q} onChange={(e) => setQ(e.target.value)} /></div>} />
+        action={<SearchInput label="جستجو در فراخوان‌ها" className="sm:w-64" value={q} onChange={(e) => setQ(e.target.value)} />} />
       {calls.isLoading ? <div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-40" /><Skeleton className="h-40" /></div>
-        : !list.length ? <p className="rounded-lg border border-dashed py-16 text-center text-muted-foreground">{q ? 'فراخوانی با این عبارت یافت نشد.' : 'در حال حاضر فراخوان فعالی وجود ندارد.'}</p>
+        : !list.length ? <Card><EmptyState icon={Megaphone} title={q ? 'فراخوانی با این عبارت یافت نشد' : 'در حال حاضر فراخوان فعالی وجود ندارد'}>{!q && 'فراخوان‌های جدید پس از انتشار در همین صفحه نمایش داده می‌شوند.'}</EmptyState></Card>
         : (
           <div className="grid gap-4 md:grid-cols-2">
             {list.map((c) => {

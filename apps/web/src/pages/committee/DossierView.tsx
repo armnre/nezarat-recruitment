@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { RESUME_LABELS, RESUME_SECTIONS } from '@nezarat/shared';
 import { Download, FileText } from 'lucide-react';
-import { cn, fa, fileSize, jDate } from '../../lib/format';
+import { fa, fileSize, jDate } from '../../lib/format';
 import type { Dossier } from '../../lib/types';
-import { Card, CardContent } from '../../components/ui';
+import { Card, CardContent, Segmented } from '../../components/ui';
 import { RESUME_FIELDS } from '../applicant/resumeFields';
 
 const MARITAL: Record<string, string> = { single: 'مجرد', married: 'متأهل', other: 'سایر' };
@@ -26,10 +26,8 @@ export function DossierView({ d }: { d: Dossier }) {
   const p = d.profile;
   return (
     <Card>
-      <div className="flex gap-1 border-b p-2">
-        {([['profile', 'مشخصات'], ['resume', 'رزومهٔ علمی'], ['docs', `مدارک (${fa(d.documents.length)})`]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={cn('rounded-md px-3 py-2 text-sm', tab === k ? 'bg-secondary font-medium' : 'text-muted-foreground hover:bg-muted')}>{l}</button>
-        ))}
+      <div className="border-b p-3">
+        <Segmented label="بخش‌های پرونده" value={tab} onChange={setTab} options={[['profile', 'مشخصات'], ['resume', 'رزومهٔ علمی'], ['docs', `مدارک (${fa(d.documents.length)})`]]} />
       </div>
       <CardContent className="pt-4">
         {tab === 'profile' && (

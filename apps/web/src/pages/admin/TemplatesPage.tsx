@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MessageSquare, Mail, RotateCcw } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
-import { Alert, Button, Card, CardContent, Field, Input, Skeleton, Textarea } from '../../components/ui';
-import { PageTitle } from '../applicant/ApplicantLayout';
+import { Alert, Button, Card, CardContent, Field, Input, PageTitle, Skeleton, Textarea } from '../../components/ui';
 
 type Tpl = { id: string; key: string; channel: 'sms' | 'email'; subject: string | null; body: string; providerTemplate: string | null };
 type Resp = { keys: string[]; defaults: Record<string, { subject: string; body: string }>; custom: Tpl[] };
@@ -56,7 +55,7 @@ export default function TemplatesPage() {
             {q.data.keys.map((k) => {
               const customized = q.data!.custom.some((c) => c.key === k);
               return (
-                <button key={k} onClick={() => setKey(k)} className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-right text-sm ${key === k ? 'bg-secondary font-medium' : 'hover:bg-muted'}`}>
+                <button key={k} onClick={() => setKey(k)} aria-current={key === k ? 'true' : undefined} className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-right text-sm ${key === k ? 'bg-secondary font-medium' : 'hover:bg-muted'}`}>
                   {KEY_LABELS[k] ?? k}{customized && <span className="h-2 w-2 rounded-full bg-accent" title="سفارشی" />}
                 </button>
               );

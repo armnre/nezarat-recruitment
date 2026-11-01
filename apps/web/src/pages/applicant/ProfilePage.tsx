@@ -9,9 +9,8 @@ import { familyStepSchema, identityStepSchema } from '@nezarat/shared';
 import { api, ApiError } from '../../lib/api';
 import { cn, fa } from '../../lib/format';
 import type { Profile, ProfileResponse } from '../../lib/types';
-import { Alert, Button, Card, CardContent, Field, Input, Select, Skeleton, Textarea } from '../../components/ui';
+import { Alert, Button, Card, CardContent, Field, Input, PageTitle, Select, Skeleton, Textarea } from '../../components/ui';
 import { JalaliDateInput } from '../../components/JalaliDateInput';
-import { PageTitle } from './ApplicantLayout';
 import { ResumeSectionEditor } from './ResumeSectionEditor';
 
 const STEPS = ['اطلاعات هویتی', 'سوابق تحصیلی', 'اطلاعات خانوادگی'];
@@ -30,7 +29,7 @@ export default function ProfilePage() {
         {STEPS.map((s, i) => (
           <li key={s}>
             <button disabled={i > done} onClick={() => setStep(i)}
-              className={cn('flex w-full items-center gap-2 rounded-md border p-3 text-right text-sm disabled:opacity-50', current === i ? 'border-primary bg-secondary' : 'bg-card')}>
+              className={cn('flex w-full items-center gap-2 rounded-md border p-3 text-right text-sm disabled:opacity-50', current === i ? 'border-primary bg-secondary' : 'bg-card')} aria-current={current === i ? 'step' : undefined}>
               <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold', done > i ? 'bg-success text-primary-foreground' : current === i ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                 {done > i ? <Check className="h-4 w-4" /> : fa(i + 1)}
               </span>

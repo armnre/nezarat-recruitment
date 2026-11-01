@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
-import { Alert, Button, Card, CardContent, Input, Select, Skeleton } from '../../components/ui';
-import { PageTitle } from '../applicant/ApplicantLayout';
+import { Alert, Button, Card, CardContent, DataTable, PageTitle, Pagination, SearchInput, Select, Skeleton } from '../../components/ui';
 import { ROLE_LABELS, type PlatformUser, type TenantRow } from './types';
 
 export default function PlatformUsersPage() {
@@ -27,15 +26,15 @@ export default function PlatformUsersPage() {
       <Card><CardContent className="pt-5">
         {toggle.error && <div className="mb-3"><Alert tone="error">{toggle.error instanceof ApiError ? toggle.error.message : 'خطا'}</Alert></div>}
         <div className="mb-4 flex flex-wrap gap-3">
-          <Input className="w-64" placeholder="نام، موبایل یا ایمیل…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-          <Select className="w-56" value={tenantId} onChange={(e) => { setTenantId(e.target.value); setPage(0); }}>
+          <SearchInput label="جستجوی نام، موبایل یا ایمیل" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
+          <Select aria-label="فیلتر دانشگاه" className="w-full sm:w-56" value={tenantId} onChange={(e) => { setTenantId(e.target.value); setPage(0); }}>
             <option value="">همهٔ دانشگاه‌ها</option>{tenants.data?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </Select>
         </div>
-        <div className="overflow-x-auto">
+        <div>
           {users.isLoading ? <Skeleton className="h-48" /> : (
-            <table className="w-full min-w-[760px] text-sm">
-              <thead className="text-xs text-muted-foreground"><tr><th className="py-2 text-right font-medium">کاربر</th><th className="text-right font-medium">دانشگاه</th><th className="text-right font-medium">نقش‌ها</th><th className="text-right font-medium">آخرین ورود</th><th className="text-right font-medium">وضعیت</th><th /></tr></thead>
+            <DataTable label="فهرست کاربران" minWidth={760}>
+              <thead><tr><th className="py-2 text-right font-medium">کاربر</th><th className="text-right font-medium">دانشگاه</th><th className="text-right font-medium">نقش‌ها</th><th className="text-right font-medium">آخرین ورود</th><th className="text-right font-medium">وضعیت</th><th /></tr></thead>
               <tbody>
                 {!users.data?.length && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">کاربری یافت نشد</td></tr>}
                 {users.data?.map((u) => (
@@ -49,13 +48,10 @@ export default function PlatformUsersPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           )}
         </div>
-        <div className="mt-3 flex justify-between text-sm">
-          <button disabled={!page} onClick={() => setPage((p) => p - 1)} className="rounded px-3 py-1 hover:bg-muted disabled:opacity-40">قبلی</button>
-          <button disabled={(users.data?.length ?? 0) < PER} onClick={() => setPage((p) => p + 1)} className="rounded px-3 py-1 hover:bg-muted disabled:opacity-40">بعدی</button>
-        </div>
+        <Pagination page={page} hasNext={(users.data?.length ?? 0) === PER} onPage={setPage} />
       </CardContent></Card>
     </>
   );

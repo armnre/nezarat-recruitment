@@ -4,9 +4,8 @@ import { ArrowLeft, CheckCircle2, Circle, Megaphone } from 'lucide-react';
 import { api } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
 import type { ApplicationRow, ProfileResponse } from '../../lib/types';
-import { LinkButton, Card, CardContent, CardHeader, CardTitle, Skeleton } from '../../components/ui';
+import { Card, CardContent, CardHeader, CardTitle, EmptyState, LinkButton, PageTitle, Skeleton } from '../../components/ui';
 import { StatusBadge } from '../../components/StatusBadge';
-import { PageTitle } from './ApplicantLayout';
 
 const STEPS = ['اطلاعات هویتی', 'سوابق تحصیلی', 'اطلاعات خانوادگی'];
 
@@ -43,11 +42,9 @@ export default function DashboardPage() {
           <CardContent>
             {apps.isLoading ? <div className="space-y-2"><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
               : !apps.data?.length ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center text-muted-foreground">
-                  <Megaphone className="h-10 w-10" />
-                  <p>هنوز درخواستی ثبت نکرده‌اید.</p>
+                <EmptyState icon={Megaphone} title="هنوز درخواستی ثبت نکرده‌اید">
                   <Link to="/applicant/calls" className="text-sm font-medium text-primary hover:underline">مشاهدهٔ فراخوان‌های فعال</Link>
-                </div>
+                </EmptyState>
               ) : (
                 <ul className="divide-y">
                   {apps.data.map((a) => (

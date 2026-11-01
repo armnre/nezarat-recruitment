@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
-import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '../../components/ui';
-import { PageTitle } from '../applicant/ApplicantLayout';
+import { Card, CardContent, CardHeader, CardTitle, Skeleton, PageTitle } from '../../components/ui';
 import { PLAN_LABELS, type PerfRow } from './types';
 
 export default function PerformancePage() {
