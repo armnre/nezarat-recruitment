@@ -3,9 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
 import type { OrgFaculty } from '../../lib/types';
-import { Alert, Button, Card, CardContent, Input, Skeleton } from '../../components/ui';
+import { Alert, Button, Card, CardContent, Input, Skeleton, PageTitle } from '../../components/ui';
 import { ConfirmDialog } from '../../components/dialog';
-import { PageTitle } from '../applicant/ApplicantLayout';
 
 type Kind = 'faculty' | 'department';
 

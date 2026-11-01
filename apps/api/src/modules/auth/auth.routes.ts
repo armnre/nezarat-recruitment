@@ -63,11 +63,11 @@ export function authRoutes(app: FastifyInstance, deps: { cfg: Config; auth: Auth
   /** تعیین دانشگاه از hostname درخواست (Host / X-Forwarded-Host پشت nginx). */
   app.get('/api/v1/public/tenant', async (req) => {
     const t = await auth.tenantByHost(requestHostname(req));
-    return { id: t.id, slug: t.slug, name: t.name };
+    return { id: t.id, slug: t.slug, name: t.name, otpEnabled: cfg.OTP_AUTH_ENABLED };
   });
 
   app.get('/api/v1/public/tenants/:slug', async (req) => {
     const t = await auth.tenantBySlug((req.params as { slug: string }).slug);
-    return { id: t.id, slug: t.slug, name: t.name };
+    return { id: t.id, slug: t.slug, name: t.name, otpEnabled: cfg.OTP_AUTH_ENABLED };
   });
 }

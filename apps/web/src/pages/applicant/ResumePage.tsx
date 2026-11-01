@@ -4,8 +4,7 @@ import { RESUME_LABELS, RESUME_SECTIONS, type ResumeSection } from '@nezarat/sha
 import { api } from '../../lib/api';
 import { cn, fa } from '../../lib/format';
 import type { ProfileResponse } from '../../lib/types';
-import { Card, CardContent, Skeleton } from '../../components/ui';
-import { PageTitle } from './ApplicantLayout';
+import { Card, CardContent, PageTitle, Skeleton } from '../../components/ui';
 import { ResumeSectionEditor } from './ResumeSectionEditor';
 
 export default function ResumePage() {
@@ -18,7 +17,7 @@ export default function ResumePage() {
       <div className="grid gap-5 md:grid-cols-[220px_1fr]">
         <nav className="flex gap-2 overflow-x-auto md:flex-col" aria-label="بخش‌های رزومه">
           {RESUME_SECTIONS.map((s) => (
-            <button key={s} onClick={() => setTab(s)}
+            <button key={s} onClick={() => setTab(s)} aria-current={tab === s ? 'true' : undefined}
               className={cn('flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-sm', tab === s ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted border')}>
               {RESUME_LABELS[s]}
               <span className={cn('rounded-full px-2 text-xs', tab === s ? 'bg-primary-foreground/20' : 'bg-muted')}>{fa(data?.resume[s].length ?? 0)}</span>

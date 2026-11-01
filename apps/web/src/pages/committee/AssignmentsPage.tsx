@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, ChevronLeft, Search } from 'lucide-react';
+import { CalendarClock, ChevronLeft } from 'lucide-react';
 import { api } from '../../lib/api';
 import { cn, fa, jDate } from '../../lib/format';
 import type { Assignment } from '../../lib/types';
-import { Card, Input, Skeleton } from '../../components/ui';
+import { Card, PageTitle, SearchInput, Segmented, Skeleton, Toolbar } from '../../components/ui';
 import { StatusBadge } from '../../components/StatusBadge';
-import { PageTitle } from '../applicant/ApplicantLayout';
 
 const TABS = [['open', 'در انتظار ارزیابی'], ['done', 'ارزیابی‌شده'], ['all', 'همه']] as const;
 const STATE: Record<Assignment['status'], [string, string]> = {
@@ -26,12 +25,10 @@ export default function AssignmentsPage() {
   return (
     <>
       <PageTitle title="کارتابل ارزیابی" sub={`${fa(openCount)} پرونده منتظر ارزیابی شماست`} />
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex rounded-md border bg-card p-1">
-          {TABS.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={cn('rounded px-3 py-1.5 text-sm', tab === k ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>{l}</button>)}
-        </div>
-        <div className="relative w-full sm:w-72"><Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pr-9" placeholder="جستجوی متقاضی یا فراخوان" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-      </div>
+      <Toolbar>
+        <Segmented label="فیلتر کارتابل" value={tab} onChange={setTab} options={TABS} />
+        <SearchInput label="جستجوی متقاضی یا فراخوان" value={q} onChange={(e) => setQ(e.target.value)} />
+      </Toolbar>
       {isLoading ? <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20" />)}</div> : !rows.length ? (
         <Card className="p-10 text-center text-sm text-muted-foreground">پرونده‌ای در این بخش نیست.</Card>
       ) : (

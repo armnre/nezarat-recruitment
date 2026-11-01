@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Pencil, Plus, UserPlus } from 'lucide-react';
 import { api } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
-import { Button, Card, CardContent, Skeleton } from '../../components/ui';
-import { PageTitle } from '../applicant/ApplicantLayout';
+import { Button, Card, CardContent, DataTable, PageTitle, Skeleton } from '../../components/ui';
 import { isExpired, PLAN_LABELS, type TenantRow } from './types';
 import TenantDialog from './TenantDialog';
 import TenantAdminDialog from './TenantAdminDialog';
@@ -26,10 +25,10 @@ export default function TenantsPage() {
   return (
     <>
       <PageTitle title="دانشگاه‌ها و اشتراک" sub="افزودن دانشگاه جدید، دامنه، پلن و سقف‌های مصرف." action={<Button onClick={() => setEdit('new')}><Plus className="h-4 w-4" />دانشگاه جدید</Button>} />
-      <Card><CardContent className="overflow-x-auto pt-5">
+      <Card><CardContent className="p-0">
         {q.isLoading ? <Skeleton className="h-48" /> : (
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="text-xs text-muted-foreground"><tr>
+          <DataTable label="فهرست دانشگاه‌ها" minWidth={820}>
+            <thead><tr>
               <th className="py-2 text-right font-medium">دانشگاه</th><th className="text-right font-medium">دامنه</th><th className="text-right font-medium">پلن</th>
               <th className="text-right font-medium">متقاضی</th><th className="text-right font-medium">فراخوان</th><th className="text-right font-medium">پایان اشتراک</th><th className="text-right font-medium">وضعیت</th><th />
             </tr></thead>
@@ -51,7 +50,7 @@ export default function TenantsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         )}
       </CardContent></Card>
       {edit && <TenantDialog tenant={edit === 'new' ? null : edit} onClose={() => setEdit(null)} />}

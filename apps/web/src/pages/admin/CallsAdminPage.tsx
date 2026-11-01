@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
 import { api, ApiError } from '../../lib/api';
 import { cn, fa, jDate } from '../../lib/format';
 import type { AdminCallRow } from '../../lib/types';
-import { Alert, Card, Input, LinkButton, Select, Skeleton } from '../../components/ui';
+import { Alert, Card, DataTable, EmptyState, LinkButton, SearchInput, Select, Skeleton, PageTitle, Toolbar } from '../../components/ui';
 import { ConfirmDialog } from '../../components/dialog';
-import { PageTitle } from '../applicant/ApplicantLayout';
 
 export const CALL_STATUS: Record<AdminCallRow['status'], [string, string]> = {
   draft: ['پیش‌نویس', 'bg-muted text-muted-foreground'], published: ['منتشرشده', 'bg-primary/10 text-primary'], closed: ['بسته‌شده', 'bg-destructive/10 text-destructive'],
@@ -26,36 +25,37 @@ export default function CallsAdminPage() {
 
   return (
     <>
-      <PageTitle title="فراخوان‌ها" sub="تعریف فراخوان، مدارک لازم و معیارهای امتیازدهی" action={<LinkButton to="/admin/calls/new"><Plus className="h-4 w-4" />فراخوان جدید</LinkButton>} />
-      <div className="relative mb-4 w-full sm:w-72"><Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pr-9" placeholder="جستجوی عنوان" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+      <PageTitle title="فراخوان‌ها" sub="تعریف فراخوان، مدارک لازم و معیارهای امتیازدهی" action={<LinkButton to="/admin/calls/new"><Plus className="h-4 w-4" aria-hidden />فراخوان جدید</LinkButton>} />
+      <Toolbar><SearchInput label="جستجوی عنوان فراخوان" value={q} onChange={(e) => setQ(e.target.value)} /></Toolbar>
       {err && <div className="mb-4"><Alert tone="error">{err}</Alert></div>}
-      {isLoading ? <Skeleton className="h-64" /> : (
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="border-b bg-muted/40 text-xs text-muted-foreground"><tr><th className="p-3 text-right font-medium">عنوان</th><th className="p-3 font-medium">بازه</th><th className="p-3 font-medium">درخواست‌ها</th><th className="p-3 font-medium">وضعیت</th><th className="p-3" /></tr></thead>
+      {isLoading ? <Skeleton className="h-64" /> : !rows.length ? (
+        <Card><EmptyState icon={Megaphone} title={q ? 'فراخوانی با این عنوان یافت نشد' : 'هنوز فراخوانی تعریف نشده است'}>{!q && <LinkButton to="/admin/calls/new" variant="outline" size="sm" className="mt-2">ایجاد نخستین فراخوان</LinkButton>}</EmptyState></Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <DataTable label="فهرست فراخوان‌ها" minWidth={720}>
+            <thead><tr><th className="text-right">عنوان</th><th>بازهٔ ثبت‌نام</th><th>درخواست‌ها</th><th>وضعیت</th><th><span className="sr-only">عملیات</span></th></tr></thead>
             <tbody>
-              {!rows.length && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">فراخوانی وجود ندارد</td></tr>}
               {rows.map((c) => (
-                <tr key={c.id} className="border-b last:border-0">
-                  <td className="p-3"><Link to={`/admin/calls/${c.id}`} className="font-medium hover:text-primary">{c.title}</Link>{c.departmentName && <div className="text-xs text-muted-foreground">{c.departmentName}</div>}</td>
-                  <td className="p-3 text-center text-xs text-muted-foreground">{jDate(c.opensAt)} تا {jDate(c.closesAt)}</td>
-                  <td className="p-3 text-center">{fa(c.applications)}</td>
-                  <td className="p-3 text-center">
-                    <Select aria-label="وضعیت فراخوان" className={cn('h-8 w-32 text-xs', CALL_STATUS[c.status][1])} value={c.status} onChange={(e) => setStatus.mutate({ id: c.id, status: e.target.value })}>
+                <tr key={c.id}>
+                  <td><Link to={`/admin/calls/${c.id}`} className="font-medium hover:text-primary hover:underline">{c.title}</Link>{c.departmentName && <div className="text-xs text-muted-foreground">{c.departmentName}</div>}</td>
+                  <td className="text-center text-xs text-muted-foreground">{jDate(c.opensAt)} تا {jDate(c.closesAt)}</td>
+                  <td className="text-center tabular">{fa(c.applications)}</td>
+                  <td className="text-center">
+                    <Select aria-label={`وضعیت ${c.title}`} className={cn('mx-auto h-8 w-32 text-xs font-medium', CALL_STATUS[c.status][1])} value={c.status} onChange={(e) => setStatus.mutate({ id: c.id, status: e.target.value })}>
                       {Object.entries(CALL_STATUS).map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
                     </Select>
                   </td>
-                  <td className="p-3"><div className="flex justify-end gap-1">
-                    <Link to={`/admin/calls/${c.id}`} className="rounded p-2 text-muted-foreground hover:bg-muted" aria-label="ویرایش"><Pencil className="h-4 w-4" /></Link>
-                    {!c.applications && <button onClick={() => setDel(c.id)} className="rounded p-2 text-muted-foreground hover:bg-muted hover:text-destructive" aria-label="حذف"><Trash2 className="h-4 w-4" /></button>}
+                  <td><div className="flex justify-end gap-1">
+                    <Link to={`/admin/calls/${c.id}`} className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`ویرایش ${c.title}`}><Pencil className="h-4 w-4" /></Link>
+                    {!c.applications && <button onClick={() => setDel(c.id)} className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={`حذف ${c.title}`}><Trash2 className="h-4 w-4" /></button>}
                   </div></td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </Card>
       )}
-      <ConfirmDialog open={!!del} onOpenChange={() => setDel(null)} title="حذف فراخوان" description="این فراخوان حذف شود؟" confirmText="حذف" loading={remove.isPending} onConfirm={() => del && remove.mutate(del)} />
+      <ConfirmDialog open={!!del} onOpenChange={() => setDel(null)} title="حذف فراخوان" description="این فراخوان برای همیشه حذف می‌شود. ادامه می‌دهید؟" confirmText="حذف" loading={remove.isPending} onConfirm={() => del && remove.mutate(del)} />
     </>
   );
 }

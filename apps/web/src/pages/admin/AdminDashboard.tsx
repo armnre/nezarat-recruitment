@@ -1,3 +1,4 @@
+import { Clock, FileText, Megaphone, UserCheck, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -5,9 +6,8 @@ import { APPLICATION_STATUSES, STATUS_LABELS_FA } from '@nezarat/shared';
 import { api } from '../../lib/api';
 import { fa, jDate } from '../../lib/format';
 import type { AdminStats } from '../../lib/types';
-import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '../../components/ui';
+import { Card, CardContent, CardHeader, CardTitle, PageTitle, Skeleton, StatCard } from '../../components/ui';
 import { StatusBadge } from '../../components/StatusBadge';
-import { PageTitle } from '../applicant/ApplicantLayout';
 
 export default function AdminDashboard() {
   const { data, isLoading } = useQuery({ queryKey: ['admin-stats'], queryFn: () => api<AdminStats>('/admin/stats') });
@@ -15,12 +15,12 @@ export default function AdminDashboard() {
   const count = (s: string) => data.byStatus.find((b) => b.status === s)?.count ?? 0;
   const total = data.byStatus.filter((b) => b.status !== 'draft').reduce((a, b) => a + b.count, 0);
   const chart = APPLICATION_STATUSES.filter((s) => s !== 'draft').map((s) => ({ name: STATUS_LABELS_FA[s], value: count(s) }));
-  const kpis = [['پرونده‌های ارسال‌شده', total], ['در انتظار بررسی اولیه', count('submitted') + count('screening')], ['در دست کمیته', count('committee_review') + count('interview')], ['فراخوان باز', data.openCalls], ['اعضای فعال کمیته', data.activeMembers]] as const;
+  const kpis = [['پرونده‌های ارسال‌شده', total, FileText, 'default'], ['در انتظار بررسی اولیه', count('submitted') + count('screening'), Clock, 'warning'], ['در دست کمیته', count('committee_review') + count('interview'), Users, 'accent'], ['فراخوان باز', data.openCalls, Megaphone, 'success'], ['اعضای فعال کمیته', data.activeMembers, UserCheck, 'default']] as const;
   return (
     <>
       <PageTitle title="پیشخوان مدیریت" sub="نمای کلی فرایند جذب در دانشگاه" />
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {kpis.map(([l, v]) => <Card key={l} className="p-4"><div className="text-xs text-muted-foreground">{l}</div><div className="mt-1 text-2xl font-bold">{fa(v)}</div></Card>)}
+        {kpis.map(([l, v, icon, tone]) => <StatCard key={l} label={l} value={v} icon={icon} tone={tone} />)}
       </div>
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Card>

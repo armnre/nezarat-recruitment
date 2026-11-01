@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api';
 
-export type PublicTenant = { id: string; slug: string; name: string };
+export type PublicTenant = { id: string; slug: string; name: string; otpEnabled?: boolean };
 
 /**
  * دانشگاه از hostname تعیین می‌شود (GET /public/tenant با هدر Host).
