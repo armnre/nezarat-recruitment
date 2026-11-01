@@ -22,6 +22,8 @@ export function createSmsProvider(cfg: Config, fetchFn: FetchFn = fetch, log?: (
       return new MelipayamakProvider({ username: need(cfg, 'MELIPAYAMAK_USERNAME'), password: need(cfg, 'MELIPAYAMAK_PASSWORD'), sender: cfg.MELIPAYAMAK_SENDER, otpBodyId: need(cfg, 'MELIPAYAMAK_OTP_BODY_ID') }, fetchFn);
     case 'ippanel':
       return new IppanelProvider({ apiKey: need(cfg, 'IPPANEL_API_KEY'), sender: need(cfg, 'IPPANEL_SENDER'), otpPattern: need(cfg, 'IPPANEL_OTP_PATTERN') }, fetchFn);
+    case 'disabled':
+      throw new Error('SMS provider is disabled');
     case 'mock':
       if (cfg.NODE_ENV === 'production') throw new Error('حالت mock پیامک در production مجاز نیست');
       return new MockSmsProvider(log);

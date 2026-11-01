@@ -12,5 +12,8 @@
     "build": "yarn workspace @nezarat/shared build && yarn workspace @nezarat/api build && yarn workspace @nezarat/web build",
     "typecheck": "yarn workspace @nezarat/shared build && yarn workspaces run typecheck",
     "test": "yarn workspace @nezarat/api test"
+  },
+  "resolutions": {
+    "**/rollup": "npm:@rollup/wasm-node@4.67.3"
   }
 }

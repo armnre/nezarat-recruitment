@@ -15,15 +15,25 @@ export function authRoutes(app: FastifyInstance, deps: { cfg: Config; auth: Auth
     return { csrfToken: req.authUser ? csrfTokenFor(cfg, req.authUser.csrfSecret) : null };
   });
 
-  app.post('/api/v1/auth/otp/request', otpLimit, async (req) => {
+  app.post('/api/v1/auth/otp/request', otpLimit, async (req, reply) => {
+    if (!cfg.OTP_AUTH_ENABLED) {
+      return reply.code(503).send({
+        error: { code: 'OTP_DISABLED', message: 'ورود پیامکی غیرفعال است' }
+      });
+    }
     const body = otpRequestSchema.parse(req.body);
     const tenant = await auth.tenantBySlug(body.tenantSlug);
-    const { expiresIn, code } = await otp.request(tenant.id, body.mobile, req.ip);
-    if (cfg.SMS_PROVIDER === 'mock' && cfg.NODE_ENV !== 'production') req.log.warn({ mobile: body.mobile, code }, 'MOCK OTP');
+    const { expiresIn } = await otp.request(tenant.id, body.mobile, req.ip);
     return { expiresIn };
   });
 
   app.post('/api/v1/auth/otp/verify', otpLimit, async (req, reply) => {
+    if (!cfg.OTP_AUTH_ENABLED) {
+      return reply.code(503).send({
+        error: { code: 'OTP_DISABLED', message: 'ورود پیامکی غیرفعال است' }
+      });
+    }
+
     const body = otpVerifySchema.parse(req.body);
     const tenant = await auth.tenantBySlug(body.tenantSlug);
     await otp.verify(tenant.id, body.mobile, body.code);
